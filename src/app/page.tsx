@@ -299,10 +299,10 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <div className="text-center text-xs text-gray-400">
-          <a href="/licenses" className="hover:text-gray-600 hover:underline">
-            ライセンス・クレジット
-          </a>
+        <div className="text-center text-xs text-gray-400 flex justify-center gap-4">
+          <a href="/terms" className="hover:text-gray-600 hover:underline">利用規約</a>
+          <a href="/privacy" className="hover:text-gray-600 hover:underline">プライバシーポリシー</a>
+          <a href="/licenses" className="hover:text-gray-600 hover:underline">ライセンス</a>
         </div>
 
         {/* Status Bar */}
