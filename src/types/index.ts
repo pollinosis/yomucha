@@ -28,3 +28,8 @@ export interface TTSSettings {
   readAuthor: boolean;  // コメント主の名前も読む
   maxLength: number;    // 最大読み上げ文字数 (0=無制限)
 }
+
+export interface FilterSettings {
+  ngWords: string[];
+  mutedUsers: string[];
+}

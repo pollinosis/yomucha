@@ -1,24 +1,31 @@
 import { TTSSettings } from "@/types";
 
+interface QueueItem {
+  text: string;
+  rateOverride?: number;
+}
+
 export class TTSManager {
-  private queue: string[] = [];
+  private queue: QueueItem[] = [];
   private speaking = false;
   private settings: TTSSettings;
-  // VOICEVOX は /api/tts 経由でサーバー側から呼び出す
+  private onQueueChange?: (texts: string[]) => void;
 
-  constructor(settings: TTSSettings) {
+  constructor(settings: TTSSettings, onQueueChange?: (texts: string[]) => void) {
     this.settings = settings;
+    this.onQueueChange = onQueueChange;
   }
 
   updateSettings(settings: TTSSettings) {
     this.settings = settings;
   }
 
-  enqueue(text: string) {
+  enqueue(text: string, rateOverride?: number) {
     const trimmed = this.settings.maxLength > 0
       ? text.slice(0, this.settings.maxLength)
       : text;
-    this.queue.push(trimmed);
+    this.queue.push({ text: trimmed, rateOverride });
+    this.notifyQueue();
     if (!this.speaking) {
       this.processNext();
     }
@@ -30,26 +37,34 @@ export class TTSManager {
       window.speechSynthesis.cancel();
     }
     this.speaking = false;
+    this.notifyQueue();
+  }
+
+  private notifyQueue() {
+    this.onQueueChange?.(this.queue.map((q) => q.text));
   }
 
   private async processNext() {
     if (this.queue.length === 0) {
       this.speaking = false;
+      this.notifyQueue();
       return;
     }
     this.speaking = true;
-    const text = this.queue.shift()!;
+    const item = this.queue.shift()!;
+    this.notifyQueue();
+
+    const rate = item.rateOverride ?? this.settings.rate;
 
     try {
       if (this.settings.engine === "voicevox") {
-        await this.speakVoicevox(text);
+        await this.speakVoicevox(item.text, rate);
       } else {
-        await this.speakWebSpeech(text);
+        await this.speakWebSpeech(item.text, rate);
       }
     } catch {
-      // fallback to Web Speech API
       try {
-        await this.speakWebSpeech(text);
+        await this.speakWebSpeech(item.text, rate);
       } catch {
         // skip
       }
@@ -58,14 +73,11 @@ export class TTSManager {
     this.processNext();
   }
 
-  private speakWebSpeech(text: string): Promise<void> {
+  private speakWebSpeech(text: string, rate: number): Promise<void> {
     return new Promise((resolve) => {
-      if (!("speechSynthesis" in window)) {
-        resolve();
-        return;
-      }
+      if (!("speechSynthesis" in window)) { resolve(); return; }
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = this.settings.rate;
+      utterance.rate = rate;
       utterance.pitch = this.settings.pitch;
       utterance.volume = this.settings.volume;
       utterance.lang = "ja-JP";
@@ -75,14 +87,14 @@ export class TTSManager {
     });
   }
 
-  private async speakVoicevox(text: string): Promise<void> {
+  private async speakVoicevox(text: string, rate: number): Promise<void> {
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text,
         speaker: this.settings.voicevoxSpeaker,
-        rate: this.settings.rate,
+        rate,
         volume: this.settings.volume,
       }),
     });
@@ -94,14 +106,8 @@ export class TTSManager {
     return new Promise((resolve) => {
       const audio = new Audio(audioUrl);
       audio.volume = this.settings.volume;
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        resolve();
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(audioUrl);
-        resolve();
-      };
+      audio.onended = () => { URL.revokeObjectURL(audioUrl); resolve(); };
+      audio.onerror = () => { URL.revokeObjectURL(audioUrl); resolve(); };
       audio.play();
     });
   }
