@@ -298,6 +298,13 @@ export default function Home() {
           <CommentList comments={comments} currentComment={currentComment} onClear={clearComments} />
         </div>
 
+        {/* Footer */}
+        <div className="text-center text-xs text-gray-400">
+          <a href="/licenses" className="hover:text-gray-600 hover:underline">
+            ライセンス・クレジット
+          </a>
+        </div>
+
         {/* Status Bar */}
         {isActive && (
           <div className="text-center">
