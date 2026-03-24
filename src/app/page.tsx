@@ -24,6 +24,7 @@ const DEFAULT_TTS_SETTINGS: TTSSettings = {
 const DEFAULT_FILTER_SETTINGS: FilterSettings = {
   ngWords: [],
   mutedUsers: [],
+  wordReplacements: [],
 };
 
 type SettingsTab = "tts" | "filter";
@@ -82,6 +83,7 @@ export default function Home() {
           setFilterSettings({
             ngWords: d.ngWords ?? [],
             mutedUsers: d.mutedUsers ?? [],
+            wordReplacements: d.wordReplacements ?? [],
           });
         }
       })
@@ -103,6 +105,7 @@ export default function Home() {
         maxLength: ttsSettings.maxLength,
         ngWords: filterSettings.ngWords,
         mutedUsers: filterSettings.mutedUsers,
+        wordReplacements: filterSettings.wordReplacements,
       }),
     }).catch(() => {});
   }, [status, ttsSettings, filterSettings]);
@@ -137,9 +140,13 @@ export default function Home() {
     if (shouldSkip(latest)) return;
 
     setCurrentComment(latest);
-    const rawText = ttsSettings.readAuthor
+    let rawText = ttsSettings.readAuthor
       ? `${latest.author}、${latest.text}`
       : latest.text;
+
+    for (const { from, to } of filterSettings.wordReplacements) {
+      if (from) rawText = rawText.split(from).join(to);
+    }
 
     const { text, rateOverride } = processBouyomiText(rawText);
     if (!text) return;

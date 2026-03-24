@@ -69,8 +69,9 @@ model UserSettings {
   maxLength      Int      @default(50)
 
   // フィルター
-  ngWords        String[] @default([])
-  mutedUsers     String[] @default([])
+  ngWords          String[] @default([])
+  mutedUsers       String[] @default([])
+  wordReplacements Json     @default("[]")
 
   updatedAt      DateTime @updatedAt
 }

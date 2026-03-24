@@ -29,7 +29,13 @@ export interface TTSSettings {
   maxLength: number;    // 最大読み上げ文字数 (0=無制限)
 }
 
+export interface WordReplacement {
+  from: string;
+  to: string;
+}
+
 export interface FilterSettings {
   ngWords: string[];
   mutedUsers: string[];
+  wordReplacements: WordReplacement[];
 }

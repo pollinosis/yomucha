@@ -80,7 +80,10 @@ export class TTSManager {
       utterance.rate = rate;
       utterance.pitch = this.settings.pitch;
       utterance.volume = this.settings.volume;
-      utterance.lang = "ja-JP";
+      // 英字が半分以上なら英語として読む
+      const asciiLetters = (text.match(/[a-zA-Z]/g) ?? []).length;
+      const total = text.replace(/\s/g, "").length;
+      utterance.lang = total > 0 && asciiLetters / total > 0.5 ? "en-US" : "ja-JP";
       utterance.onend = () => resolve();
       utterance.onerror = () => resolve();
       window.speechSynthesis.speak(utterance);
