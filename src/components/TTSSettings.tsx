@@ -1,6 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { TTSSettings, TTSEngine } from "@/types";
+
+interface Speaker {
+  id: number;
+  name: string;
+}
 
 interface Props {
   settings: TTSSettings;
@@ -46,6 +52,15 @@ function Slider({
 
 export default function TTSSettingsPanel({ settings, onChange, voicevoxAvailable }: Props) {
   const update = (partial: Partial<TTSSettings>) => onChange({ ...settings, ...partial });
+  const [speakers, setSpeakers] = useState<Speaker[]>([]);
+
+  useEffect(() => {
+    if (!voicevoxAvailable) return;
+    fetch("/api/tts?speakers=1")
+      .then((r) => r.json())
+      .then((d) => { if (d.speakers) setSpeakers(d.speakers); })
+      .catch(() => {});
+  }, [voicevoxAvailable]);
 
   return (
     <div className="space-y-3">
@@ -70,18 +85,23 @@ export default function TTSSettingsPanel({ settings, onChange, voicevoxAvailable
         ))}
       </div>
 
-      {/* VOICEVOX スピーカー選択 */}
+      {/* VOICEVOX 話者選択 */}
       {settings.engine === "voicevox" && voicevoxAvailable && (
         <div className="flex items-center gap-3">
           <label className="text-xs text-gray-600 w-14 shrink-0">話者</label>
-          <input
-            type="number"
-            min={0}
-            value={settings.voicevoxSpeaker}
-            onChange={(e) => update({ voicevoxSpeaker: parseInt(e.target.value) })}
-            className="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
-          />
-          <span className="text-xs text-gray-400">ID (0=四国めたん)</span>
+          {speakers.length > 0 ? (
+            <select
+              value={settings.voicevoxSpeaker}
+              onChange={(e) => update({ voicevoxSpeaker: parseInt(e.target.value) })}
+              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white"
+            >
+              {speakers.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-xs text-gray-400">読み込み中...</span>
+          )}
         </div>
       )}
 

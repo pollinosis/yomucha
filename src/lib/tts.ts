@@ -79,7 +79,12 @@ export class TTSManager {
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, speaker: this.settings.voicevoxSpeaker }),
+      body: JSON.stringify({
+        text,
+        speaker: this.settings.voicevoxSpeaker,
+        rate: this.settings.rate,
+        volume: this.settings.volume,
+      }),
     });
     if (!res.ok) throw new Error("VOICEVOX TTS failed");
 
